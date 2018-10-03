@@ -2,6 +2,8 @@
 
 # Persistent messages (peer-storage)
 
+![](https://i.imgur.com/aJE3r8v.png)
+
 ## Use case
 
 ------------------------> t
