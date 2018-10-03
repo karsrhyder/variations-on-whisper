@@ -4,7 +4,7 @@
 
 ![](https://i.imgur.com/aJE3r8v.png)
 
-## Use case
+## 1. Use case
 
 ------------------------> t
 A .[===]..................
@@ -18,7 +18,7 @@ C ..[===================].
   - and sends a signal to the network: "Hi, send my pending messages"
   - C is able to retrieve the message and broadcasts it to the network, which B will pick up
 
-# Implementation
+# 2.Implementation
 
 Messages are encrypted on whisper with a symmetric key common to the SwarmCity app.
 The payload will be also encrypted:
