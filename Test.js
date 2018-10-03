@@ -6,7 +6,7 @@ const scUtils = require('./shortcodeTokenTransfer');
 const Web3 = require('web3');
 
 // Flurkel's geth node
-const url = 'http://192.168.0.172:8545'
+// const url = 'http://192.168.0.172:8545'
 
 // dapplion's digital ocean geth node
 // const url = 'http://my.ropsten.dnp.dappnode.eth:8545'
@@ -32,7 +32,6 @@ async function runTest() {
     receiver = await scUtils.createIdentity();
     thirdparty = await scUtils.createIdentity();
 
-    let subscriptionRes = await scUtils.subscribe(dappSym);
     //subscriptionRes.on('received-message', function(msg){ console.log('event? ', msg)});
 
     setInterval(() => {

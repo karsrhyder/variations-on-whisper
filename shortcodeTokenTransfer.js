@@ -10,9 +10,9 @@ const eventEmitter = new events.EventEmitter();
 
 // Flurkel's geth node
 // const url = 'http://192.168.0.134:8545'
-const url = 'ws://192.168.0.172:8545'
+// const url = 'ws://192.168.0.172:8545'
 // dapplion's digital ocean geth node
-// const url = 'http://my.ropsten.dnp.dappnode.eth:8545'
+const url = 'http://my.ropsten.dnp.dappnode.eth:8545'
 
 // Create the ropsten web3
 const web3 = new Web3(url);

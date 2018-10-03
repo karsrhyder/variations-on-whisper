@@ -1,0 +1,23 @@
+{
+  "name": "variations-on-whisper",
+  "version": "1.0.0",
+  "description": "variations-on-whisper",
+  "main": "Test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karsrhyder/variations-on-whisper.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/karsrhyder/variations-on-whisper/issues"
+  },
+  "homepage": "https://github.com/karsrhyder/variations-on-whisper#readme",
+  "dependencies": {
+    "web3": "^1.0.0-beta.36"
+  }
+}
