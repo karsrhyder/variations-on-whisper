@@ -1,23 +1,27 @@
 const EventEmitter = require('events');
-const Web3 = require('web3');
-let web3;
-let dappSym;
+const colors = require('colors');
 const nacl = require('tweetnacl');
 const naclUtil = require('tweetnacl-util');
 nacl.util = naclUtil;
 
+let web3;
+let dappSym;
+
 class Gossip extends EventEmitter {
     constructor() {
         super();
-        const url = 'ws://178.62.244.110:8546'
-        web3 = new Web3(url);
     }
 
-    async init() {
-        dappSym = await web3.shh.generateSymKeyFromPassword('swarmcity1');
+    async init(_web3) {
+        console.clear();
+        console.log("Gossip - Whisper".yellow);
+
+        web3 = _web3;
+        dappSym = '0ae647d91375eb3ae4ee06e77ae6710eb42f81018edc14791c4ab1c5a7120a8e';
+        //dappSym = await web3.shh.generateSymKeyFromPassword('swarmcity1');
         let Id = await web3.shh.addSymKey('0x'+dappSym);
         let hasit = await web3.shh.hasSymKey(dappSym);
-        console.log('init: ', dappSym, Id, hasit);
+        console.log(colors.blue('Initializing: \n', 'DappSym: ', dappSym, '\n Id: ', Id, '\n On node: ', hasit));
         return dappSym;
     };
 
@@ -35,10 +39,9 @@ class Gossip extends EventEmitter {
                 //console.log('listening on ', _dappSymKeyId, ' - ', Date.now());
                 if (!msgs.length) return 
                 msgs.forEach(m => {
+                    const decodePayload = web3.utils.hexToUtf8(m.payload);
+                    const [hash, nonceEncoded, cypherText] = decodePayload.split(".");
                     //if (hash === hashOfInterest) {
-                        const decodePayload = web3.utils.hexToUtf8(m.payload);
-                        const [hash, nonceEncoded, cypherText] = decodePayload.split(".");
-                        //console.log('hash: ', hash, ' - nonceEncoded: ', nonceEncoded, ' - Cyphertext: ', cypherText);
                         const keyEncoded = 'KzpSTk1pezg5eTJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=';
                         const key = nacl.util.decodeBase64(keyEncoded);
                         const nonce = nacl.util.decodeBase64(nonceEncoded);
@@ -46,9 +49,9 @@ class Gossip extends EventEmitter {
 
                         // decrypt
                         const messageBytes = nacl.secretbox.open(box, nonce, key);
-                        //console.log('hashofinterest: ', nacl.util.encodeUTF8(messageBytes));
                         const msg = nacl.util.encodeUTF8(messageBytes);
                     //}
+                        console.log('Received:\n'.grey,msg.yellow);
                         this.emit('message', msg, m.sig);
                 })
             }), 1000)
@@ -102,7 +105,9 @@ class Gossip extends EventEmitter {
             powTime: 2,
             topic: '0x00000001',
             payload: web3.utils.fromAscii(payload)
-        }).then(hash => {
+        }).then(hash => {                        
+            console.log('Sent:\n'.grey,payload.green);
+
             //console.log('Successfully posted message ', JSON.stringify(payload), ' --- ', hash, + Date.now())
         }).catch(err => {
             console.error('Error posting msg: ',err)

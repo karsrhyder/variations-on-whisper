@@ -1,7 +1,6 @@
 const Gossip = require('./common.js');
 const gossip = new Gossip();
 
-
 let dappSym;
 let sender; 
 let receiver;
@@ -13,10 +12,10 @@ const url = 'ws://178.62.244.110:8546'
 const web3 = new Web3(url);
 
 gossip.on('message', (msg) => {
-    console.log('Received data: ', msg);
+    //console.log('Received data: ', msg);
 });
 
-gossip.init().then((res) => { 
+gossip.init(web3).then((res) => { 
     gossip.subscribe(res)
 });
 
@@ -25,17 +24,16 @@ async function start() {
     receiver = await gossip.createIdentity();
     thirdparty = await gossip.createIdentity();
     
-    //setInterval(() => {
-        post();
-    //}, 1000);
+    setInterval(() => {
+        post(Date.now());
+    }, 10000);
 };
 
-async function post() {
+async function post(t) {
     let from = sender;
     let to = receiver;
-    let payload = 'Hello world';
+    let payload = 'Hello world at ' + t;
     return (gossip.postMessage(payload, from, to));
-    //return (true);
 };
 
 start();
