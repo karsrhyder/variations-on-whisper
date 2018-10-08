@@ -1,5 +1,6 @@
 const EventEmitter = require('events');
 const colors = require('colors');
+const btoa = require('btoa');
 const nacl = require('tweetnacl');
 const naclUtil = require('tweetnacl-util');
 nacl.util = naclUtil;
@@ -12,47 +13,39 @@ class Gossip extends EventEmitter {
         super();
     }
 
+    // Initialize the library
     async init(_web3) {
         console.clear();
         console.log("Gossip - Whisper".yellow);
-
         web3 = _web3;
         dappSym = '0ae647d91375eb3ae4ee06e77ae6710eb42f81018edc14791c4ab1c5a7120a8e';
         //dappSym = await web3.shh.generateSymKeyFromPassword('swarmcity1');
         let Id = await web3.shh.addSymKey('0x'+dappSym);
         let hasit = await web3.shh.hasSymKey(dappSym);
-        console.log(colors.blue('Initializing: \n', 'DappSym: ', dappSym, '\n Id: ', Id, '\n On node: ', hasit));
+        console.log(colors.blue('Initializing: \n', 'DappSym: ', dappSym, '\n Id: ', Id, '\n Exists on node: ', hasit));
         return dappSym;
     };
 
-    async subscribe(_dappSymKeyId) {
+    async subscribe(_dappSymKeyId, _secret) {
         // Subscribe function 
+        var self = this;
         web3.shh.newMessageFilter({
             symKeyID: _dappSymKeyId,
             topics: ['0x00000001'],
             ttl: 20,
             minPow: 0.8,
         }).then(_Id => {
-            //console.log(_id);
-            //return ({id: _id});
             setInterval(() => web3.shh.getFilterMessages(_Id).then(msgs => {
-                //console.log('listening on ', _dappSymKeyId, ' - ', Date.now());
                 if (!msgs.length) return 
                 msgs.forEach(m => {
                     const decodePayload = web3.utils.hexToUtf8(m.payload);
-                    const [hash, nonceEncoded, cypherText] = decodePayload.split(".");
-                    //if (hash === hashOfInterest) {
-                        const keyEncoded = 'KzpSTk1pezg5eTJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=';
-                        const key = nacl.util.decodeBase64(keyEncoded);
-                        const nonce = nacl.util.decodeBase64(nonceEncoded);
-                        const box = nacl.util.decodeBase64(cypherText);
-
-                        // decrypt
-                        const messageBytes = nacl.secretbox.open(box, nonce, key);
-                        const msg = nacl.util.encodeUTF8(messageBytes);
-                    //}
-                        console.log('Received:\n'.grey,msg.yellow);
-                        this.emit('message', msg, m.sig);
+                    this.unHash(decodePayload).then((res) => {
+                        //if (hash === hashOfInterest) {
+                            this.decrypt(_secret, res[1], res[2]).then((res) => {
+                                this.emit('message', res, m.sig);
+                            });
+                        //}
+                    });
                 })
             }), 1000)
         });
@@ -62,6 +55,40 @@ class Gossip extends EventEmitter {
         return dappSym;
     };
 
+    async unHash(_hash) {
+        return _hash.split(".");
+    };
+
+    /* Encrypt the payload */
+    async encrypt(_from, _to, _message, _secret) {
+        const hash = web3.utils.sha3(web3.utils.sha3(_from.privateKey) + _to.publicKey);
+        const messageString = _message;
+        const keyEncoded = _secret;
+        const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+        const key = nacl.util.decodeBase64(keyEncoded);
+        const messageBytes = nacl.util.decodeUTF8(messageString);
+        const box = nacl.secretbox(messageBytes, nonce, key);
+        const nonceEncoded = nacl.util.encodeBase64(nonce);
+        const cypherText = nacl.util.encodeBase64(box);
+        //console.log(`${hash}.${nonceEncoded}.${cypherText}`);
+        return (`${hash}.${nonceEncoded}.${cypherText}`);
+    };
+
+    /* Decrypt the payload */
+    async decrypt(_secret,_nonceEncoded,_cypherText) {
+        const key =  nacl.util.decodeBase64(_secret);
+        const nonce =  nacl.util.decodeBase64(_nonceEncoded);
+        const box =  nacl.util.decodeBase64(_cypherText);
+        const messageBytes =  nacl.secretbox.open(box, nonce, key);
+        const msg =  nacl.util.encodeUTF8(messageBytes);
+        return msg;
+    };
+
+    /* Check hash vs. user */ 
+    async validateInterest(_hash) {
+    }
+
+    /* Create a pincode */
     _getpincode(decimals) {
         if (decimals < 2) {
           decimals = 2;
@@ -75,27 +102,10 @@ class Gossip extends EventEmitter {
         return randomstring;
     };
 
-    async postMessage(_message, _to ,_from) {
-        // whatever
-        //console.log('posting: ', JSON.stringify(_message));
+    async postMessage(_message, _to , _from, _secret) {
         // Hash
         let dappSymHere = this.getDappSym();
-
-        //console.log('post: ', _from.privateKey, _to.publicKey, _message, dappSym);
-        const hash = web3.utils.sha3(web3.utils.sha3(_from.privateKey) + _to.publicKey);
-        // Message String
-        const messageString = _message;
-        // Encrypt
-        //const keyEncoded = btoa(nacl.randomBytes(10)); // this should be what?
-        const keyEncoded = 'KzpSTk1pezg5eTJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U='
-        const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
-        const key = nacl.util.decodeBase64(keyEncoded);
-        const messageBytes = nacl.util.decodeUTF8(messageString);
-        const box = nacl.secretbox(messageBytes, nonce, key);
-        const nonceEncoded = nacl.util.encodeBase64(nonce);
-        const cypherText = nacl.util.encodeBase64(box);
-        // Concat payload
-        const payload = `${hash}.${nonceEncoded}.${cypherText}`;
+        const encrypted = await this.encrypt(_from, _to, _message, _secret);
 
         web3.shh.post({
             symKeyID: dappSymHere,
@@ -104,11 +114,9 @@ class Gossip extends EventEmitter {
             powTarget: 2.01,
             powTime: 2,
             topic: '0x00000001',
-            payload: web3.utils.fromAscii(payload)
+            payload: web3.utils.fromAscii(encrypted)
         }).then(hash => {                        
-            console.log('Sent:\n'.grey,payload.green);
-
-            //console.log('Successfully posted message ', JSON.stringify(payload), ' --- ', hash, + Date.now())
+            console.log('Sent:\n'.grey,encrypted.green);
         }).catch(err => {
             console.error('Error posting msg: ',err)
         }); 
