@@ -101,16 +101,16 @@ class Gossip extends EventEmitter {
         const messageBytes = await nacl.util.decodeUTF8(messageString);
         const box = await nacl.secretbox(messageBytes, nonce, key);
         const nonceEncoded = await nacl.util.encodeBase64(nonce);
-        const cypherText = await nacl.util.encodeBase64(box);
-        //console.log(`${hash}.${nonceEncoded}.${cypherText}`);
-        return (`${hash}.${nonceEncoded}.${cypherText}`);
+        const cipherText = await nacl.util.encodeBase64(box);
+        //console.log(`${hash}.${nonceEncoded}.${cipherText}`);
+        return (`${hash}.${nonceEncoded}.${cipherText}`);
     };
 
     /* Decrypt the payload */
-    async decrypt(_secret, _nonceEncoded, _cypherText) {
+    async decrypt(_secret, _nonceEncoded, _cipherText) {
         const key =  nacl.util.decodeBase64('A1v/xZFFMwUry3r5n6Uo6BPNNhr0YGSlqUxTuNAWrHk=');
         const nonce =  nacl.util.decodeBase64(_nonceEncoded);
-        const box =  nacl.util.decodeBase64(_cypherText);
+        const box =  nacl.util.decodeBase64(_cipherText);
         const messageBytes =  nacl.secretbox.open(box, nonce, key);
         const msg =  nacl.util.encodeUTF8(messageBytes);
         return msg;

@@ -31,16 +31,8 @@ import nacl from "tweetnacl";
 import naclUtil from "tweetnacl-util";
 nacl.util = naclUtil;
 // Hash
-const hash = sha3(sha3(chatPrivateKey) + recepientPubKey);
-// Encrypt
-const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
-const key = nacl.util.decodeBase64(keyEncoded);
-const messageBytes = nacl.util.decodeUTF8(messageString);
-const box = nacl.secretbox(messageBytes, nonce, key);
-const nonceEncoded = nacl.util.encodeBase64(nonce);
-const cypherText = nacl.util.encodeBase64(box);
-// Concat payload
-const payload = `${hash}.${nonceEncoded}.${cypherText}`;
+const cipher = crypt.encrypt(message, chatPrivateKey);
+const payload = msg.regular.encode(chatPrivateKey, recepientAddress, cipher);
 broadcast(payload);
 //
 ```
@@ -49,11 +41,7 @@ B "I'm online message"
 Should send the hash and prove that's this message belong to him
 
 ```javascript
-const hash = sha3(sha3(chatPrivateKey) + recepientPubKey);
-const hashKey = sha3(chatPrivateKey);
-const tsHex = Date.now().toString(16);
-const signature = await web3.eth.sign(tsHex, account);
-const payload = `${hash}.${hashKey}.${tsHex}.${signature}`;
+const payload = encode(chatPrivateKey, yourAddress, privateKey);
 broadcast(payload);
 ```
 
@@ -61,30 +49,22 @@ Server verification
 
 ```javascript
 // fire this on an I'm online msg
-on("imOnlineMsg", (input) => {
-    const [hash, hashKey, tsHex, signature] = input.split('.')
-    // authorizeRecepient will only be computed once if it returns true
-    let authorizedRecepient;
-    function authorizeRecepient(hash, hashKey, tsHex, signature) {
-        if (authorizedRecepient) return true
-        const recepientPubKey = web3.eth.accounts.recover(tsHex, signature);
-        return authorizedRecepient = hash === sha3(hashKey + recepientPubKey);
-    }
-    let recepientPubKey;
-    let _hash;
-    for (const msg of msgs) {
-        if (msg.hash = hash) {
-            if (authorizeRecepient(hash, hashKey, tsHex, signature)) {
-                // Authorized recepient
-                broadcast(msg.input); // `${hash}.${nonceEncoded}.${cypherText}`
-                pruneMsg(msg)
-            } else {
-                // Un-authorized recepient
-                console.log('Unauthorized recepient attempted to access messages of hash: '+hash)
-                return
-            }
-        }
-    });
+on("imOnlineMsg", payload => {
+  // Ignore unauthorized messages
+  if (!msg.online.authorize(payload)) {
+    // Maybe punishable action could be taken against this user
+    return console.log(
+      "Unauthorized user attempted to access messages of hash: " + payload
+    );
+  }
+  const { hash } = msg.online.decode(payload);
+
+  // Search the database for matching msgs
+  const msgsToSend = msgs.filter(msg => msg.hash === hash);
+
+  // Send messages and prune
+  broadcast(msgsToSend);
+  pruneMsg(msgsToSend);
 });
 ```
 
@@ -92,16 +72,12 @@ User reception
 
 ```javascript
 // compute vars
-on("msg", input => {
-  const [hash, nonceEncoded, cypherText] = input.split(".");
+on("msg", payload => {
+  const { hash, cipher } = msg.regular.decode(payload);
   if (hash === hashOfInterest) {
-    const key = nacl.util.decodeBase64(keyEncoded);
-    const nonce = nacl.util.decodeBase64(nonceEncoded);
-    const box = nacl.util.decodeBase64(cypherText);
-
-    // decrypt
-    const messageBytes = nacl.secretbox.open(box, nonce, key);
-    return nacl.util.encodeUTF8(messageBytes);
+    useInTheApplication(crypt.encrypt(cipher, chatPrivateKey));
+  } else {
+    store({ hash, cipher });
   }
 });
 ```

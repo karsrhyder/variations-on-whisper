@@ -4,7 +4,7 @@
   "description": "variations-on-whisper",
   "main": "Test.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/mocha/bin/mocha"
   },
   "repository": {
     "type": "git",
@@ -23,6 +23,11 @@
     "minimist": "^1.2.0",
     "tweetnacl": "^1.0.0",
     "tweetnacl-util": "^0.15.0",
-    "web3": "^1.0.0-beta.36"
+    "web3": "^1.0.0-beta.36",
+    "web3-utils": "^1.0.0-beta.36"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^5.2.0"
   }
 }
