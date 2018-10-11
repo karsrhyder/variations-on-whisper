@@ -1,0 +1,83 @@
+.App {
+  text-align: center;
+}
+
+.dialogue {
+  background-color: #222;
+  display: flex;
+  justify-content: flex-end;
+  flex-direction: column;
+  font-family: 'Courier New', Courier, monospace;
+  padding: 20px;
+  color: white;
+}
+
+.footer {
+  background-color:white;
+  height: 50px;
+  padding: 20px;
+  color: white;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 999;
+}
+
+.share {
+  height: 25px;
+  padding: 10px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  white-space: nowrap; 
+  overflow: hidden;
+  text-overflow: ellipsis; 
+  margin: 10px 0px 0px 0px;
+}
+.msgme {
+  text-align: right;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: flex-start;
+  padding: 10px;
+  border-radius: 3px;
+  background-color: #333;
+  margin-left: auto;
+}
+
+.msgother {
+  color: rgb(255, 255, 255, 0.5);
+
+  text-align: left;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+  border-radius: 3px;
+  background-color: #333;
+  margin-right: auto;
+}
+
+#msginput {
+  border: none;
+  height: 30px;
+  width:  90vw;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 16px;
+}
+
+textarea:focus, input:focus{
+  outline: none;
+}
+
+.App-title {
+  font-size: 1.5em;
+}
+
+.App-intro {
+  font-size: large;
+}
+
+@keyframes App-logo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
